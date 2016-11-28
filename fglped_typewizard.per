@@ -1,0 +1,54 @@
+--created with fglped
+LAYOUT(style="dialog_resize",text="Form assistant")
+VBOX
+GRID
+{
+[""]
+[quest                                           :         ]
+}
+END
+HBOX
+GRID
+{
+[img                         ]
+[                            ]
+[                            ]
+[                            ]
+[                            ]
+[                            ]
+[                            ]
+}
+END
+GRID
+{
+[""]
+<G ""                       >   
+ [rlayout                  ]
+ [                         ]
+ [                         ]
+}
+END
+END --HBOX
+GRID
+{
+[""]
+[""]
+[""]
+[""]
+[""]
+[""]
+[""]
+["                                                                          "]
+-----------------------------------------------------------------------------------------------------------------------
+                                                                             [    :cancel:" ":back  : next :" ":finish ]
+}
+END --GRID
+END --VBOX
+ATTRIBUTES
+RADIOGROUP rlayout=FORMONLY.rlayout,ITEMS=(("single","Single column"),("table","Table"));
+IMAGE img = FORMONLY.img;
+LABEL quest:text="Which layout your form should have ?";
+BUTTON cancel:cancel,TEXT="Cancel";
+BUTTON back:prevwiz,TEXT="< &Back";
+BUTTON next:nextwiz,TEXT="&Next >";
+BUTTON finish:accept,TEXT="&Finish";

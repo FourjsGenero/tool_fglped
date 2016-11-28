@@ -1,0 +1,29 @@
+ACTION DEFAULTS
+  ACTION history_up ( TEXT="",COMMENT="goes up in the search history",ACCELERATOR=UP )
+  ACTION history_down ( TEXT="",COMMENT="goes down in the search history",ACCELERATOR=DOWN )
+  ACTION history_show ( TEXT="",COMMENT="shows the search history window",ACCELERATOR=ALT-DOWN )
+END
+
+LAYOUT (style="dialog",TEXT="Search")
+GRID
+{
+<G "Search"                                         >
+
+ Find what:  [search                          ] 
+ [""]
+ ------------------------------------------------
+ [""]
+  Options                            Direction
+ [wholeword                       ] [updown   ]
+ [matchcase                       ] [         ]
+                            
+                           
+                          
+}
+END
+
+ATTRIBUTES
+ButtonEdit search  =formonly.srch_search,action = history_show,image="bigcombo" ;
+CHECKBOX wholeword =formonly.srch_wholeword, text="Match &whole word only",NOT NULL;
+CHECKBOX matchcase =formonly.srch_matchcase, text="Match &case",NOT NULL;
+RADIOGROUP updown=formonly.srch_updown   , items= (("Up","&Up"),("Down","&Down")),NOT NULL;

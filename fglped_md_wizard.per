@@ -1,0 +1,43 @@
+--created with fglped
+LAYOUT(style="dialog_resize")
+GRID
+{
+[img            ]
+[               ][quest                                  :    ]
+[               ]
+[               ]
+ Tables:
+[mytables                 ]
+ <T t                    >       <T z                         >
+    Available fields                Chosen fields
+ [x|afields              ] [r   ][y|cfields                 ]
+ [x|afields              ] [rr  ][y|cfields                 ]
+ [x|afields              ]       [y|cfields                 ]
+ [x|afields              ] [l   ][y|cfields                 ]
+ [x|afields              ] [ll  ][y|cfields                 ]
+
+[""]
+--------------------------------------------------------------
+                    [    :cancel:" ":back  : next :" ":finish ]
+}
+END
+ATTRIBUTES
+IMAGE img:IMAGE="fglped_wizard.png";
+LABEL quest:text="Which fields your form should contain ?";
+COMBOBOX mytables=FORMONLY.mytables,COMMENT="You can choose from more than one table.",NOT NULL;
+x=FORMONLY.atable,SCROLL,HIDDEN;
+afields=FORMONLY.acol,SCROLL;
+y=FORMONLY.ctable,SCROLL,HIDDEN;
+cfields=FORMONLY.ccol;
+
+BUTTON r:right,TEXT=">";
+BUTTON rr:allright,TEXT=">>";
+BUTTON l:left,TEXT="<";
+BUTTON ll:allleft,TEXT="<<";
+BUTTON cancel:cancel,TEXT="Cancel";
+BUTTON back:prevwiz,TEXT="< &Back";
+BUTTON next:nextwiz,TEXT="&Next >";
+BUTTON finish:accept,TEXT="&Finish";
+INSTRUCTIONS
+SCREEN RECORD afields(atable,acol);
+SCREEN RECORD cfields(ctable,ccol);

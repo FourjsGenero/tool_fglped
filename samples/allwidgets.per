@@ -1,0 +1,126 @@
+LAYOUT
+VBOX
+VBOX
+GRID
+{
+ [tit                                                          ]
+}
+END
+GROUP(TEXT="Single Widgets")
+GRID
+{
+                               
+[l           ][label      ]["  "]["edit"      ][edit      ]
+["buttonedit"][bedit      ]      ["dateedit"  ][dedit     ]
+["combobox"  ][combo      ]      ["textedit"  ][txt       ]
+["button"    ][but        ]      ["canvas"    ][cv        ]
+["image"     ][img        ]      ["radio"     ][rad       ]
+["check"     ][chk        ]      ["progress"  ][prog      ]
+["splider"   ][slider     ]      ["spinedit"  ][spin      ]
+["timeedit"  ][time       ]
+}
+END --GRID
+END
+
+HBOX
+GROUP(TEXT="Table")
+GRID
+{
+<T t                   >   
+ [t1     ][t2        ]
+ [t1     ][t2        ]
+ [t1     ][t2        ]
+}
+END --GRID
+END
+GROUP(TEXT="Compat Array")
+GRID
+{
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+ [c1     ][c2     ]
+}
+END
+END
+GROUP(TEXT="Matrix")
+GRID
+{
+[m1 ][m2 ]
+[m3 ]
+[m1 ][m2 ]
+[m3 ]
+[m1 ][m2 ]
+[m3 ]
+}
+END --GRID
+END
+END --HBOX
+END --VBOX
+FOLDER
+PAGE(text="Page 1")
+GRID
+{
+a[ep1]
+}
+END --GRID
+END --PAGE
+PAGE(TEXT="Page 2")
+GRID
+{
+b[ep2]
+}
+END --GRID
+END --PAGE
+PAGE(TEXT="Page 3")
+GRID
+{
+c
+}
+END --GRID
+END --PAGE
+END --FOLDER
+END --VBOX
+END --LAYOUT
+ATTRIBUTES
+LABEL tit:TEXT="Click to the widgets!",REVERSE,COLOR=RED;
+LABEL       l     : text="label";
+LABEL       label  = formonly.label,REVERSE,COLOR=BLUE;
+EDIT        edit   = formonly.edit ;
+BUTTONEDIT  bedit  = formonly.bedit;
+DATEEDIT    dedit  = formonly.dedit;
+COMBOBOX    combo  = formonly.combo;
+TEXTEDIT    txt    = FORMONLY.txt;
+BUTTON      but    : but,TEXT="button";
+CANVAS      cv     : cv;
+IMAGE       img    = formonly.img;
+RADIOGROUP  rad    = FORMONLY.rad,ITEMS=('a','b','c'),ORIENTATION=HORIZONTAL;
+CHECKBOX    chk    = FORMONLY.chk;
+PROGRESSBAR prog   = FORMONLY.prog;
+&ifndef VMVER130
+SLIDER      slider = FORMONLY.slider;
+SPINEDIT    spin   = formonly.spin ;
+TIMEEDIT    time   = FORMONLY.time;
+&else
+slider = FORMONLY.slider;
+spin   = formonly.spin ;
+time   = FORMONLY.time;
+&endif
+t1=formonly.t1;
+t2=formonly.t2;
+c1=FORMONLY.c1;
+c2=FORMONLY.c2;
+m1=formonly.m1;
+m2=formonly.m2;
+m3=formonly.m3;
+ep1=FORMONLY.ep1;
+ep2=FORMONLY.ep2;
+
+INSTRUCTIONS
+SCREEN RECORD t(t1,t2);
+SCREEN RECORD c(c1,c2);
+SCREEN RECORD m(m1,m2,m3);
+DEFAULT SAMPLE="0"

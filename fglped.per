@@ -1,0 +1,90 @@
+ACTION DEFAULTS
+  ACTION new ( Text="&New", COMMENT="Creates a new form" , ACCELERATOR=CONTROL-N)
+  ACTION newfromwiz ( Text="New From &Wizard", COMMENT="Creates a new form using the fglped wizard")
+  ACTION saveas ( Text="Save &As", COMMENT="Saves the form under another name"  )
+  ACTION browse ( Text="Browse..", COMMENT="Browses all forms in the directory of the current form" ,ACCELERATOR=CONTROL-B )
+  ACTION close ( Text="&Exit", COMMENT="Closes this window", ACCELERATOR=CONTROL-W)
+  --ACTION accept ( Text="&Ok", COMMENT="compiles,refreshes", ACCELERATOR=F5)
+  ACTION preview ( Text="&Preview(Compile)", COMMENT="compiles and refreshes the form,shows errrors in a message box", ACCELERATOR=F5)
+  ACTION viewerr ( Text="View &Error", COMMENT="compiles and refreshes the form,jumps immediately to the first error", ACCELERATOR=F6)
+  ACTION previewopt ( Text="P&reviewOpt", COMMENT="compiles,postprocess and refreshes the form", ACCELERATOR=F7)
+  ACTION open ( Text="&Open...", COMMENT="Opens an existing form", ACCELERATOR=CONTROL-O)
+  ACTION save ( Text="&Save", COMMENT="Saves the current form", ACCELERATOR=CONTROL-S)
+  --ACTION jump_to_def( TEXT="Jump to Definition",ACCELERATOR=F8)
+  --ACTION find ( TEXT="Find..." ,COMMENT ="Finds the specified text",ACCELERATOR=CONTROL-F,IMAGE="find" )
+  --ACTION findnext  ( TEXT="Find Next", comment="Finds the next occurence of the search string", ACCELERATOR=F3 ,image="empty")
+  ACTION jump_to_def ( TEXT="Jump to definition" ,IMAGE="arrdown",ACCELERATOR=F2)
+  ACTION findword (TEXT="Find Word", COMMENT="Finds the next occurence of the word the cursor is over" ,ACCELERATOR=CONTROL-D)
+  ACTION gotoline (TEXT="Goto Line...", COMMENT="Opens a dialog to go to a line number" ,ACCELERATOR=CONTROL-G)
+  ACTION replace ( TEXT="Replace..." ,COMMENT ="Replaces the specified text with another text",ACCELERATOR=CONTROL-H)
+  ACTION replaceagain ( TEXT="Replace Again" ,COMMENT ="Replaces the current searched text with the value from the replace dialog",ACCELERATOR=F4)
+  ACTION undolastreplace ( TEXT="Undo last replace", COMMENT = "Rolls back the change from the last replace operation", ACCELERATOR=SHIFT-F4)
+  ACTION choose_style ( TEXT="Choose Window S&tyle...", COMMENT = "Takes a user defined style to display the current forms", ACCELERATOR=CONTROL-T)
+  ACTION toggle_text ( TEXT="Toggle Text Display", COMMENT = "Fills the fields with  characters according to their length", ACCELERATOR=CONTROL-L)
+  ACTION nextfield( TEXT="",ACCELERATOR=NONE)
+END
+
+TOPMENU
+  GROUP top_file (TEXT="File")
+    COMMAND new (TEXT="New")
+    COMMAND newfromwiz
+    COMMAND open
+    COMMAND save 
+    COMMAND saveas (TEXT="Save As...")
+    COMMAND browse (TEXT="Browse...")
+    SEPARATOR
+
+    COMMAND close
+  END
+  GROUP edit (TEXT="Edit")
+    --COMMAND find
+    --COMMAND findnext
+    COMMAND findword
+    SEPARATOR
+    COMMAND replace
+    COMMAND replaceagain
+    COMMAND undolastreplace
+    SEPARATOR
+    COMMAND gotoline
+    COMMAND jump_to_def 
+    SEPARATOR
+    COMMAND editcopy
+    COMMAND editpaste
+    COMMAND editcut
+  END
+  GROUP(TEXT="View")
+    COMMAND preview 
+    COMMAND viewerr
+    --COMMAND choose_style
+    COMMAND toggle_text
+  END
+END
+   
+LAYOUT(style="fglped",MINWIDTH=40,MINHEIGHT=20)
+GRID
+{  
+[src                                                                            ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+[                                                                               ]
+} 
+END
+
+ATTRIBUTES
+--TextEdit src=formonly.src,scrollbars=both,stretch=both,tag="showform_src_textedit",style="per",FONTPITCH=FIXED;
+TextEdit src=formonly.src,scrollbars=both,stretch=both,tag="showform_src_textedit",style="per bigfont";
+

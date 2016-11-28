@@ -1,0 +1,60 @@
+ACTION DEFAULTS
+  ACTION del (TEXT="Delete",DEFAULTVIEW=NO,ACCELERATOR=DELETE)
+  ACTION accept (TEXT="Open",DEFAULTVIEW=NO,ACCELERATOR=Control-Return,ACCELERATOR2=Shift-Return,ACCELERATOR3=Control-Shift-Return)
+  ACTION arrayselect (TEXT="",DEFAULTVIEW=NO,ACCELERATOR=Return,ACCELERATOR2=Enter)
+END
+--TOOLBAR
+--  ITEM move_up(IMAGE="uplevel",COMMENT="Moves to the parent directory")
+--END
+LAYOUT(text="",style="dialog_resize")
+GRID
+{
+  [lfd |path                                                    |bu ]
+   <T t1                                                           >
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+    [ei  |entry              |esize      |emodt             |etype ]
+
+  [lfn |file                                               |    open]
+  [lft |ftype                                              |    canc]
+}
+END
+--  [" "]
+
+ATTRIBUTES
+TABLE t1:DOUBLECLICK=arrayselect;
+--GROUP dir:text="directory",GRIDCHILDRENINPARENT;
+--GROUP gfile:text="Selected File",GRIDCHILDRENINPARENT;
+LABEL lfd:text="Directory:";
+path = FORMONLY.currpath,SCROLL,comment="Input the path";
+--BUTTON ip : input_path,text="&Input";
+BUTTON bu : move_up,image="uplevel",comment="Moves one directory up";
+IMAGE ei = FORMONLY.eimage;
+entry = FORMONLY.entry, TITLE="Name";
+esize = FORMONLY.esize, TITLE="Size", JUSTIFY = RIGHT;
+emodt = FORMONLY.emodt, TITLE="Time";
+etype = FORMONLY.etype, TITLE="Type";
+LABEL lfn=FORMONLY.lfn;--TEXT="File:"
+LABEL lft:TEXT="Files of type:";
+file = FORMONLY.filename,SCROLL;
+COMBOBOX ftype = FORMONLY.ftype,SCROLL,sizepolicy=DYNAMIC,NOT NULL;
+--BUTTON if : input_file,text="&Input",comment="Input the file name";
+BUTTON open:accept,text="Open";
+BUTTON canc:cancel,text="Cancel";
+END
+
+INSTRUCTIONS
+SCREEN RECORD sr(
+   FORMONLY.eimage,
+   FORMONLY.entry,
+   FORMONLY.esize,
+   FORMONLY.emodt,
+   FORMONLY.etype
+);
+END
+

@@ -1,0 +1,31 @@
+ACTION DEFAULTS
+  ACTION history_up ( TEXT="",COMMENT="goes up in the search history",ACCELERATOR=UP )
+  ACTION history_down ( TEXT="",COMMENT="goes down in the search history",ACCELERATOR=DOWN )
+  ACTION history_show ( TEXT="",COMMENT="shows the search history window",ACCELERATOR=ALT-DOWN )
+END
+
+LAYOUT (style="dialog",TEXT="Replace")
+GRID
+{
+<G "Replace"                                     >
+
+ Search  For:  [search                          ] 
+ Replace With: [replace                         ] 
+ [""]
+ ------------------------------------------------
+ [""]
+  Options                           
+ [wholeword                       ] 
+ [matchcase                       ][replaceall ] 
+                            
+                           
+                          
+}
+END
+
+ATTRIBUTES
+ButtonEdit search  =formonly.srch_search,action = history_show,image="bigcombo" ;
+ButtonEdit replace  =formonly.srch_replace,action = history_show,image="bigcombo" ;
+CHECKBOX wholeword =formonly.srch_wholeword, text="Match &whole word only",NOT NULL;
+CHECKBOX matchcase =formonly.srch_matchcase, text="Match &case",NOT NULL;
+CHECKBOX replaceall=formonly.srch_replaceall,text="Replace &all",NOT NULL, COMMENT="Replaces all occurences of the matching items",HIDDEN;
