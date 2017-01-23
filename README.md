@@ -7,6 +7,7 @@ WYSIWYG feeling for the edited forms.
 
 Email comments/suggestions/wishes to : l s a t 4 j s d o t c o m
 
+![Genero FGL Form Editor (GDC)](https://github.com/FourjsGenero/tool_fglped/raw/master/docs/fglped-screen-001.png)
 
 
 ## Prerequisites
