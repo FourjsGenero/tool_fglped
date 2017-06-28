@@ -53,14 +53,15 @@
   </Settings>
   <LanguageList version="1.0"/>
   <PlatformList version="1.0"/>
-  <Group label="Group" language="Genero">
-    <Application binaryName="Application" dependencies="" id="18740" label="Application">
+  <Group label="fglped_demo" language="Genero">
+    <Application binaryName="fglmkper" id="-791863102" label="fglmkper">
       <File filePath="fglmkper.4gl"/>
+    </Application>
+    <Application binaryName="fglped" environment="value:FGLIMAGEPATH=$(ProjectDir)/icons:$(FGLDIR)/lib/image2fonts.txt" id="18740" label="fglped">
       <File filePath="fglped.4st"/>
       <File filePath="fglped.4gl"/>
       <File filePath="fglped_dialogs.4gl"/>
       <File filePath="fglped_fileutils.4gl"/>
-      <File filePath="fglped_install.4gl"/>
       <File filePath="fglped_md_filedlg.4gl"/>
       <File filePath="fglped_md_wizard.4gl"/>
       <File filePath="fglped_schema.4gl"/>
@@ -77,6 +78,9 @@
       <File filePath="fglped_replace.per"/>
       <File filePath="fglped_search.per"/>
       <File filePath="fglped_typewizard.per"/>
+    </Application>
+    <Application binaryName="fglped_install" id="-1232994187" label="fglped_install">
+      <File filePath="fglped_install.4gl"/>
     </Application>
   </Group>
 </Project>

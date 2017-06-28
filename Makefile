@@ -1,6 +1,6 @@
 FORMS=$(patsubst %.per,%.42f,$(wildcard *.per))
 
-PROGMOD=fglped.42m
+PROGMOD=fglped.42m fglmkper.42m fglped_install.42m
 
 all: $(PROGMOD) $(FORMS)
 
