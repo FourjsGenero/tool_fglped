@@ -106,19 +106,19 @@ fglform since version 2.10 has a nice code completion option ( -L <line>,<column
 and fglped makes use of that.
 
 You get a completion everywhere in the source code except inside the LAYOUT section,
-just press the <Tab> key and you get a list of possible symbols to choose from.
+just press the 'Tab' key and you get a list of possible symbols to choose from.
 
-If nothing happens when you press <Tab> then there is no completion, or the
+If nothing happens when you press 'Tab' then there is no completion, or the
 compilation fails before the place where the cursor is located.
 
 The source code can be incomplete AFTER or directly under the cursor but not before.
 Press F6 in case you are not sure to jump to the first error location.
 
-As an exercise, choose File->New and press then <Tab> in the empty form.
+As an exercise, choose File->New and press then 'Tab' in the empty form.
 
-Choose LAYOUT, and press again <Tab> a.s.o.
+Choose LAYOUT, and press again 'Tab' a.s.o.
 
-For the moment the <Tab> key is hard wired to call the completion. You must change
+For the moment the 'Tab' key is hard wired to call the completion. You must change
 the Action defaults in fglped.per if this is not acceptable for you.
 
 The limitation that there is no completion inside the LAYOUT section comes from the
