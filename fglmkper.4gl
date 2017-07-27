@@ -103,7 +103,6 @@ MAIN
 
   IF num_args()=0 THEN
     CALL usage()
-    RETURN (-1)
   END IF
 
   CALL fglmkper_init()
@@ -145,7 +144,6 @@ MAIN
       IF NOT extractColumns(arg_val(i)) THEN
         DISPLAY "error: could not parse columns"
         CALL usage()
-        RETURN (-1)
       END IF
       LET i=i+1
     END IF
@@ -153,12 +151,10 @@ MAIN
   IF columns.getLength()=0 THEN
     DISPLAY "error: no columns specified"
     CALL usage()
-    RETURN (-1)
   END IF
 
   IF fgltDatabase IS NULL THEN 
     CALL displayError( "error: database name is empty") 
-    RETURN (-1)
   END IF
   IF template IS NULL THEN 
     LET template="detail.tpl"
@@ -167,9 +163,7 @@ MAIN
 
   IF NOT generateForm() THEN
     CALL displayError( "error: generation of form failed" )
-    RETURN (-1)
   END IF
-  RETURN 0
 END MAIN
 
 FUNCTION generateForm()
@@ -202,7 +196,6 @@ FUNCTION generateForm()
   FOR i=1 TO columns.getLength()
     IF NOT columns[i].found THEN
       CALL displayError( "error: column '"||columns[i].table||"."||columns[i].column|| "' does not exist in schema '"||fgltDatabase||"'")
-      RETURN FALSE
     END IF
   END FOR
 
@@ -366,7 +359,6 @@ FUNCTION readTable()
   LET schemaFile=getSchema()
   IF schemaFile IS NULL THEN
     CALL displayError( "error: could not find schema file '"||fgltDatabase||"'")
-    RETURN FALSE
   END IF
 
   -- read schema file and fill
@@ -443,6 +435,7 @@ END FUNCTION
 FUNCTION displayError(s)
   DEFINE s STRING
   DISPLAY s
+  EXIT PROGRAM 1
 END FUNCTION
 
 FUNCTION getColType(col_type, col_length) 
@@ -762,7 +755,7 @@ Usage: fglmkper -s <schema> \[-t <template>] \[-o <output>] \"column [column  ..
   -t template : the name of a template-file in resource directory\n
                 default: record.tpl\n
   -o output   : write output to file <output>\n "
-
+  EXIT PROGRAM 1
 END FUNCTION
 
 FUNCTION extractColumns(src)
