@@ -14,6 +14,7 @@ Email comments/suggestions/wishes to : l s a t 4 j s d o t c o m
 
 * Genero BDL 3.10+
 * Genero Desktop Client 3.10+
+* Genero Studio 3.10+
 * GNU Make
 
 ## Compilation from command line
