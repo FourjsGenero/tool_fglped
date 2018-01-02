@@ -186,7 +186,7 @@ END FUNCTION
 FUNCTION right(d)
   DEFINE d ui.Dialog
   DEFINE idx,lastC INT
-  LET idx = d.getCurrentRow("a")
+  LET idx = d.getCurrentRow("afields")
   DISPLAY "idx:",idx
   LET lastC=cfields.getLength()+1
   LET cfields[lastC].ctable=afields[idx].atable
