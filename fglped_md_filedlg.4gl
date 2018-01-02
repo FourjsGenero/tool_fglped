@@ -429,7 +429,7 @@ FUNCTION _filedlg_appendEntry(isdir,name,typelist,size,modDate)
   END IF
   IF m_r.opt_choose_directory AND NOT isdir THEN 
     CALL _flat_files.appendElement()
-    LET len=_filedlg_list.getLength()
+    LET len=_flat_files.getLength()
     LET _flat_files[len] = name
   ELSE
     CALL _filedlg_list.appendElement()
