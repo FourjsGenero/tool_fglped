@@ -3,14 +3,12 @@ ACTION DEFAULTS
   ACTION newfromwiz ( Text="New From &Wizard", COMMENT="Creates a new form using the fglped wizard")
   ACTION saveas ( Text="Save &As", COMMENT="Saves the form under another name"  )
   ACTION browse ( Text="Browse..", COMMENT="Browses all forms in the directory of the current form" ,ACCELERATOR=CONTROL-B )
-  ACTION close ( Text="&Exit", COMMENT="Closes this window", ACCELERATOR=CONTROL-W)
-  --ACTION accept ( Text="&Ok", COMMENT="compiles,refreshes", ACCELERATOR=F5)
-  ACTION preview ( Text="&Preview(Compile)", COMMENT="compiles and refreshes the form,shows errrors in a message box", ACCELERATOR=F5)
+  ACTION close ( Text="&Exit", COMMENT="Closes this window", ACCELERATOR=CONTROL-W,ACCELERATOR2=F11)
+  ACTION preview ( Text="&Compile+Preview", COMMENT="compiles and refreshes the form,shows errrors in a message box", ACCELERATOR=F5)
   ACTION viewerr ( Text="View &Error", COMMENT="compiles and refreshes the form,jumps immediately to the first error", ACCELERATOR=F6)
   ACTION previewopt ( Text="P&reviewOpt", COMMENT="compiles,postprocess and refreshes the form", ACCELERATOR=F7)
-  ACTION open ( Text="&Open...", COMMENT="Opens an existing form", ACCELERATOR=CONTROL-O)
-  ACTION save ( Text="&Save", COMMENT="Saves the current form", ACCELERATOR=CONTROL-S)
-  --ACTION jump_to_def( TEXT="Jump to Definition",ACCELERATOR=F8)
+  ACTION open ( Text="&Open...", COMMENT="Opens an existing form", ACCELERATOR=CONTROL-O,ACCELERATOR2=ALT-O)
+  ACTION save ( Text="&Save", COMMENT="Saves the current form", ACCELERATOR=CONTROL-S,ACCELERATOR2=ALT-S)
   --ACTION find ( TEXT="Find..." ,COMMENT ="Finds the specified text",ACCELERATOR=CONTROL-F,IMAGE="find" )
   --ACTION findnext  ( TEXT="Find Next", comment="Finds the next occurence of the search string", ACCELERATOR=F3 ,image="empty")
   ACTION jump_to_def ( TEXT="Jump to definition" ,IMAGE="arrdown",ACCELERATOR=F2)
@@ -53,7 +51,7 @@ TOPMENU
     COMMAND editcut
   END
   GROUP(TEXT="View")
-    COMMAND preview 
+    COMMAND preview
     COMMAND viewerr
     --COMMAND choose_style
     COMMAND toggle_text

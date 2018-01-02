@@ -37,6 +37,15 @@
      <StyleAttribute name="ringMenuPosition"    value="none" />
      <StyleAttribute name="position"            value="field" />
      <StyleAttribute name="forceDefaultSettings"  value="yes" />
+     <StyleAttribute name="resetFormSize" value="1" />
+  </Style>
+  <Style name="Form.fglped_preview">
+     <StyleAttribute name="resetFormSize" value="1" />
+  </Style>
+  <Style name="Window.fglped_preview_gbc">
+     <StyleAttribute name="actionPanelPosition" value="right" />
+     <StyleAttribute name="ringMenuPosition"    value="right" />
+     <StyleAttribute name="forceDefaultSettings"  value="yes" />
   </Style>
   <Style name="Window.browse">
      <StyleAttribute name="ringMenuPosition"    value="right" />

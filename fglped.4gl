@@ -1,3 +1,4 @@
+OPTIONS SHORT CIRCUIT
 IMPORT os
 IMPORT FGL fgldialog
 IMPORT FGL fglped_md_wizard
@@ -15,7 +16,7 @@ DEFINE m_sc_open INT
 DEFINE m_error_line STRING
 DEFINE m_formNode om.DomNode
 DEFINE m_srcfile STRING
-DEFINE m_init INT
+--DEFINE m_init INT
 DEFINE m_formedit INT
 DEFINE m_title STRING
 DEFINE m_checked INT
@@ -35,6 +36,7 @@ DEFINE m_style STRING --user selected Window Style
 DEFINE m_browseidx INT
 DEFINE m_toggle_text INT
 DEFINE m_raiseId INT
+DEFINE m_clientOnMac INT
 
 --- searchdialog
 DEFINE srch_search STRING
@@ -54,6 +56,7 @@ CONSTANT A_SAMPLE="sample"
 CONSTANT A_SQLTYPE="sqlType"
 --our preview style constant
 CONSTANT S_PREVIEW="fglped_preview"
+CONSTANT S_PREVIEW_GBC="fglped_preview_gbc"
 --error word
 CONSTANT S_ERROR="Error"
 --error image
@@ -109,6 +112,10 @@ FUNCTION edit_form(fname)
     OPEN FORM f FROM "fglped"
     DISPLAY FORM f
   END IF
+  CALL setClientOnMac()
+  IF isGBC() THEN
+    CALL hideSideBar()
+  END IF
   LET idx=1
   LET changed=1
   IF fname IS NULL THEN
@@ -137,7 +144,7 @@ FUNCTION edit_form(fname)
   LET tmpname=setCurrForm(m_srcfile,tmpname)
   LET src_copy=src
   LET copy2=src
-  INPUT BY NAME src WITHOUT DEFAULTS 
+  INPUT BY NAME src WITHOUT DEFAULTS ATTRIBUTE(NAME="theinput")
     BEFORE INPUT
       LET init=0
       --CALL DIALOG.setActionActive("cancel",0)
@@ -145,12 +152,31 @@ FUNCTION edit_form(fname)
       CALL DIALOG.setActionActive("accept",0)
       CALL DIALOG.setActionHidden("accept",1)
       CALL DIALOG.setActionHidden("fglfed_select",1)
+      IF isGBC() THEN
+        CALL addAcceleratorsToTopMenu()
+        CALL DIALOG.setActionActive("find",0)
+        CALL DIALOG.setActionActive("findnext",0)
+        CALL DIALOG.setActionActive("replace",0)
+        CALL DIALOG.setActionActive("replaceagain",0)
+        CALL DIALOG.setActionActive("undolastreplace",0)
+        CALL DIALOG.setActionActive("fglfed_select",0)
+        CALL DIALOG.setActionActive("jump_to_def",0)
+        CALL DIALOG.setActionHidden("jump_to_def",1)
+        CALL DIALOG.setActionActive("viewerr",0)
+        CALL DIALOG.setActionHidden("viewerr",1)
+        CALL DIALOG.setActionActive("findword",0)
+        CALL DIALOG.setActionHidden("findword",1)
+        CALL DIALOG.setActionActive("toggle_text",0)
+        CALL DIALOG.setActionHidden("toggle_text",1)
+      END IF
+      IF NOT isGDC() THEN
+        CALL deactivateIdleAction()
+      END IF
     BEFORE FIELD src
       IF cursor>0 THEN
         CALL my_setcursor(cursor)
       END IF
     ON ACTION jump_to_def
-      DISPLAY "jump_to_def"
       LET goto_def=TRUE
       GOTO doViewErr
     ON ACTION viewerr
@@ -167,9 +193,7 @@ LABEL doViewErr:
         END IF
       END IF
       LET copy2=src
-      DISPLAY "viewerr ready"
     ON ACTION preview
-      DISPLAY "ON ACTION preview"
       LET directpreview=1
       LET opt=0
 LABEL dopreview:
@@ -199,9 +223,11 @@ LABEL dopreview:
       CALL display_by_name_src(src)
       CALL close_sc_window()
       LET tmpname=setCurrForm("",tmpname)
-      CALL showform(opt,"fglped_empty.42f",1)
-      LET init=0
-      GOTO dopreview
+      IF NOT isGBC() THEN
+        CALL showform(opt,"fglped_empty.42f",1,0)
+        LET init=0
+        GOTO dopreview
+      END IF
     ON ACTION newfromwiz
       LET src = fetchSrc(get_fldbuf(src))
       IF (ans:=checkFileSave(src,src_copy))="cancel" THEN CONTINUE INPUT END IF
@@ -213,6 +239,7 @@ LABEL dopreview:
         LET tmpname=setCurrForm(file_join(wizdir,WIZGEN),tmpname)
         CALL display_by_name_src(src)
         CALL close_sc_window()
+        LET init=1
         GOTO dopreview
       ELSE
         LET src = open_copy
@@ -330,9 +357,7 @@ LABEL completion:
       --write only the string portion until the cursor to prevent 
       --errors caused by later crap
       CALL my_write(tmpname,src.subString(1,ccursor-1))
-      IF m_client_version>=1.40 THEN
-        CALL complete(src,tmpname,ccursor,0) RETURNING src,ccursor
-      END IF
+      CALL complete(src,tmpname,ccursor,0) RETURNING src,ccursor
       IF checkChanged(src,copy2) 
         --OR ccursor<>my_cursor() 
                                      THEN
@@ -343,7 +368,9 @@ LABEL completion:
       IF ccursor<>my_cursor() THEN
         CALL my_setcursor(ccursor)
       END IF
-      GOTO idleCheck
+      IF NOT isGBC() THEN
+        GOTO idleCheck
+      END IF
     ON IDLE 1
       LET src=fetchSrc(get_fldbuf(src))
       IF checkChanged(src,copy2) THEN
@@ -351,7 +378,7 @@ LABEL completion:
          LET copy2=src
       ELSE 
         IF m_srcfile IS NULL AND src IS NULL AND NOT m_sc_open THEN
-          CALL showform(opt,"fglped_empty.42f",0)
+          CALL showform(opt,"fglped_empty.42f",0,0)
         END IF
       END IF
       LET ccursor=my_cursor()
@@ -670,7 +697,7 @@ FUNCTION checkFileSave(src,src_copy)
   DEFINE src_copy STRING
   DEFINE ans STRING
   IF checkChanged(src,src_copy) THEN
-    IF isMacGDC() THEN --be mac specific
+    IF m_clientOnMac THEN --be mac specific
       LET ans=fgl_winbutton("fglped",sfmt("Do you want to save the changes you made in\nthe form \"%1\"?",m_title),"Save...","Don't Save|Cancel|Save...","question",0)
       CASE ans
         WHEN "Save..."    LET ans="yes"
@@ -717,7 +744,7 @@ END FUNCTION
 FUNCTION doHighlight(src)
   DEFINE src STRING
   DEFINE elNode om.DomNode
-  IF m_client_version<1.40 THEN
+  IF m_client_version<1.40 OR NOT isGDC() THEN
     RETURN
   END IF
   --DISPLAY "doHighlight begin"
@@ -757,7 +784,7 @@ FUNCTION previewForm(fname,src,cursor,showerror,opt)
       END IF
     END IF
     IF compmess IS NULL THEN
-      CALL showform(opt,NULL,showerror)
+      CALL showform(opt,NULL,TRUE,showerror)
       IF NOT m_showform_failed THEN
         LET m_error_line=NULL
       END IF
@@ -908,6 +935,7 @@ FUNCTION complete(src,fname,cursor,recurse)
     END IF
     LET curr=1
   ELSE
+    CALL close_sc_if_GBC()
     OPEN WINDOW proposals WITH FORM "fglped_proposals"
     CALL set_count(proparr.getLength())
     DISPLAY ARRAY proparr TO p.*
@@ -1180,11 +1208,12 @@ END FUNCTION
 --shows a form in the 'sc' window
 --if refresh is 1, the window is recreated otherwise the form is
 --loaded via XML into the existing window
-FUNCTION showform(opt,otherform,refresh)
+FUNCTION showform(opt,otherform,refresh,previewaction)
   DEFINE opt INT
   DEFINE otherform STRING
   DEFINE refresh INT
-  DEFINE ff STRING
+  DEFINE previewaction INT
+  DEFINE pstyle,ff STRING
   DEFINE winNode,fNode,curr om.DomNode
   LET m_showform_failed=0
   IF otherform IS NOT NULL THEN
@@ -1197,33 +1226,34 @@ FUNCTION showform(opt,otherform,refresh)
     END IF
   END IF
   CALL highlightNode(NULL)
-  IF NOT m_sc_open OR refresh THEN
+  IF isGBC() THEN
+    LET pstyle=S_PREVIEW_GBC
+  ELSE
+    LET pstyle=S_PREVIEW
+  END IF
+  IF NOT m_sc_open OR isGBC() THEN
     --recreate the 'sc' window
     IF m_sc_open THEN
       CALL close_sc_window()
     END IF
     --OPEN WINDOW sc WITH FORM ff ATTRIBUTES(style=S_PREVIEW)
-    OPEN WINDOW sc AT 0,0 WITH 25 ROWS, 60 COLUMNS ATTRIBUTES(style=S_PREVIEW)
+    OPEN WINDOW sc AT 0,0 WITH 25 ROWS, 60 COLUMNS ATTRIBUTES(style=pstyle)
     OPEN FORM theform FROM ff
     DISPLAY FORM theform
     LET m_sc_open=1
     LET winNode=getWindowNode("sc")
     --patch over our preview style to get the previous position on the screen
     --and no decoration
-    CALL winNode.setAttribute(A_STYLE,S_PREVIEW)
+    CALL winNode.setAttribute(A_STYLE,pstyle)
+    CALL winNode.setAttribute("text",sfmt("Preview of:%1",m_title))
     LET fNode = getFormNode(winNode)
-    CALL fNode.setAttribute(A_STYLE,S_PREVIEW)
+    CALL fNode.setAttribute(A_STYLE,pstyle)
     CALL fNode.setAttribute(A_VERSION,m_formVersion)
-    --activate the formedit click extension if available
-    WHENEVER ERROR CONTINUE
-    LET m_formedit=1
-    CALL ui.Interface.frontcall("formedit","edit",[winNode.getId(),1],[])
-    WHENEVER ERROR STOP
   ELSE
     --just load the form into the existing window
     CURRENT WINDOW IS sc
     CLOSE FORM theform
-    LET fNode=loadForm(ff,"sc")
+    LET fNode=loadForm(ff,"sc",pstyle)
     IF fNode IS NULL THEN
       LET m_showform_failed=1
       LET m_error_line="Can't load :",ff
@@ -1232,6 +1262,23 @@ FUNCTION showform(opt,otherform,refresh)
     CALL fNode.setAttribute(A_VERSION,m_formVersion)
     LET winNode = fNode.getParent()
   END IF
+  IF NOT m_formedit AND NOT isGBC() THEN
+    --activate the formedit click extension if available
+    WHENEVER ERROR CONTINUE
+    CALL ui.Interface.frontcall("formedit","edit",[winNode.getId(),1],[])
+    LET m_formedit=1
+    WHENEVER ERROR STOP
+  END IF
+
+  IF previewaction AND (NOT isGDC()) THEN
+    DISPLAY "createPreview"
+    MENU "Preview"
+      ON ACTION myclose ATTRIBUTE(TEXT="Close (Escape)",ACCELERATOR="Escape")
+        EXIT MENU
+    END MENU
+    RETURN
+  END IF
+
   IF m_infiledlg THEN
     CURRENT WINDOW IS __filedialog
   ELSE
@@ -1251,7 +1298,7 @@ FUNCTION showform(opt,otherform,refresh)
   END IF
 END FUNCTION
 
---close the 'sc' window
+--close the 'sc' window, only used for GBC
 FUNCTION close_sc_window()
   DEFINE winNode om.DomNode
   IF m_sc_open THEN
@@ -1263,17 +1310,25 @@ FUNCTION close_sc_window()
       WHENEVER ERROR STOP
       LET m_formedit=0
     END IF
-    IF m_init=0 THEN
-      CALL manipulatePreviewStyle()
-      CALL fgl_refresh()
-      LET m_init=1
+    --IF m_init=0 THEN
+      --CALL manipulatePreviewStyle()
+      --CALL fgl_refresh()
+      --LET m_init=1
+    --END IF
+    IF isGBC() THEN
+      CLOSE WINDOW sc
+      LET m_sc_open=0
     END IF
-    DISPLAY "CLOSE WINDOW sc"
-    CLOSE WINDOW sc
-    LET m_sc_open=0
     CURRENT WINDOW IS screen
     CALL fgl_refresh()
   END IF
+END FUNCTION
+
+FUNCTION close_sc_if_GBC()
+  IF NOT isGBC() THEN 
+    RETURN
+  END IF
+  CALL close_sc_window()
 END FUNCTION
 
 --returns the corresponding window node to a given window name
@@ -1307,9 +1362,10 @@ FUNCTION getFormNode(winNode)
 END FUNCTION
 
 --loads the form into the window named with windowName
-FUNCTION loadForm(ff,windowName)
+FUNCTION loadForm(ff,windowName,pstyle)
   DEFINE ff STRING
   DEFINE windowName STRING
+  DEFINE pstyle STRING
   DEFINE oldFormNode om.DomNode
   DEFINE winNode,fNode om.DomNode
   --DEFINE node,vl,va om.DomNode
@@ -1353,6 +1409,10 @@ FUNCTION loadForm(ff,windowName)
   --patch the title
   IF attrExists(fnode,"text") THEN
     CALL winNode.setAttribute("text",fnode.getAttribute("text"))
+  END IF
+  CALL winNode.setAttribute(A_STYLE,pstyle)
+  IF fNode.getAttribute(A_STYLE) IS NULL THEN
+    CALL fNode.setAttribute(A_STYLE,pstyle)
   END IF
   RETURN fNode
 END FUNCTION
@@ -1664,6 +1724,9 @@ FUNCTION highlightNode(node)
   --DEFINE child om.DomNode
   DEFINE starttime DATETIME YEAR TO FRACTION(3)
   DEFINE endv INTERVAL HOUR TO FRACTION(3)
+  IF NOT isGDC() THEN
+    RETURN
+  END IF
   IF node IS NULL THEN
     LET id=""
   ELSE
@@ -1781,6 +1844,7 @@ FUNCTION do_find(src,cursor,selend)
   DEFINE cursor INT
   DEFINE selend INT
   DEFINE found,idxhist,idxfound Integer
+  CALL close_sc_if_GBC()
   OPEN WINDOW search WITH FORM "fglped_search"
   CALL fgl_settitle("Search text")
   IF srch_updown IS NULL OR srch_updown.getLength()=0 THEN
@@ -1833,6 +1897,7 @@ FUNCTION do_replace(src,cursor,selend)
   DEFINE selend INT
   DEFINE found,idxfound Integer
   DEFINE idxhist_search,idxhist_repl Integer
+  CALL close_sc_if_GBC()
   OPEN WINDOW search WITH FORM "fglped_replace"
   LET srch_replaceall=0
   INPUT BY NAME srch_search, srch_replace, srch_wholeword, srch_matchcase, srch_replaceall WITHOUT DEFAULTS ATTRIBUTES(UNBUFFERED)
@@ -2180,6 +2245,7 @@ END FUNCTION
 FUNCTION do_gotoline(src,cursor)
   DEFINE src STRING
   DEFINE cursor INT
+  CALL close_sc_if_GBC()
   OPEN WINDOW gotoline WITH FORM "fglped_gotoline"
   LET int_flag=FALSE
   INPUT BY NAME m_lineno WITHOUT DEFAULTS
@@ -2352,7 +2418,9 @@ FUNCTION manipulatePreviewStyle()
   DEFINE nl,unl om.NodeList
   DEFINE doc,udoc om.DomDocument
   DEFINE name,value STRING
-
+  IF isGBC() OR m_client_version>=2.50 THEN --omit the crap code below
+    RETURN
+  END IF
   LET udoc=om.DomDocument.createFromXmlFile(m_user_styles)
   IF udoc IS NOT NULL AND m_style.getLength()>0 THEN
     LET uroot=uDoc.getDocumentElement()
@@ -2440,6 +2508,9 @@ FUNCTION checkClientVersion()
     LET version=version.subString(1,pointpos-1)
   END IF
   LET m_client_version=version
+  IF NOT isGDC() THEN
+    LET m_client_version=2.0
+  END IF
   DISPLAY "client version:",m_client_version
 END FUNCTION
 
@@ -2651,14 +2722,172 @@ FUNCTION previewBrowseForm(fname,len,dirname)
   END IF
 END FUNCTION
 
-FUNCTION isMacGDC() 
-  DEFINE ostype STRING
-  DEFINE fename string
-  CALL ui.Interface.frontcall("standard","feinfo", ["ostype"],[ostype])
-  CALL ui.Interface.frontcall("standard","feinfo", ["fename"],[fename])
-  IF (fename = "GDC" OR fename="Genero Desktop Client")
-     AND ostype="OSX" THEN
+FUNCTION isGDC()
+  DEFINE fename STRING
+  LET fename=ui.Interface.getFrontEndName()
+  IF fename=="GDC" OR fename=="Genero Desktop Client" THEN
+    --DISPLAY "GDC detected"
     RETURN TRUE
+  ELSE
+    RETURN FALSE
   END IF
-  RETURN FALSE;
+END FUNCTION
+
+FUNCTION isGBC()
+  RETURN ui.Interface.getFrontEndName()=="GBC"
+END FUNCTION
+
+FUNCTION setClientOnMac()
+  DEFINE ostype STRING
+  CALL ui.Interface.frontcall("standard","feinfo", ["ostype"],[ostype])
+  IF ostype="OSX" THEN
+    LET m_clientOnMac=TRUE
+  END IF
+END FUNCTION
+
+--displays an om node tree with attributes
+FUNCTION displayNode(n,indent)
+  DEFINE n,ch om.DomNode
+  DEFINE i INT
+  DEFINE indent,s,aName STRING
+  LET s=indent,n.getTagName()
+  FOR i=1 TO n.getAttributesCount()
+    LET aName=n.getAttributeName(i)
+    LET s=s," ",aName,": '",n.getAttribute(aName),"'"
+  END FOR
+  DISPLAY s
+  LET indent=indent,"  "
+  LET ch=n.getFirstChild()
+  WHILE ch IS NOT NULL
+    CALL displayNode(ch,indent)
+    LET ch=ch.getNext()
+  END WHILE
+END FUNCTION
+
+FUNCTION deactivateIdleAction()
+  DEFINE w ui.Window
+  DEFINE wNode,idleNode om.DomNode
+  DEFINE nl om.NodeList
+  --as all other clients are disturbed by the idle action we 
+  --"disable" it by giving it a never ending timeout
+  LET w=ui.Window.getCurrent()
+  LET wNode=w.getNode()
+  --CALL displayNode(wNode,"")
+  LET nl= wNode.selectByPath("//IdleAction[@timeout=\"1\"]")
+  IF nl.getLength()!=1 THEN
+    CALL myErr("Can't find IdleAction")
+  END IF
+  LET idleNode=nl.item(1)
+  CALL idleNode.setAttribute("timeout","10000")
+END FUNCTION
+
+FUNCTION hideSideBar()
+  DEFINE w ui.Window
+  DEFINE f ui.Form
+  DEFINE wNode,fNode,te om.DomNode
+  DEFINE nl om.NodeList
+  DEFINE i INT
+  LET w=ui.Window.getCurrent()
+  LET wNode=w.getNode()
+  LET f=w.getForm()
+  LET fNode=f.getNode()
+  --just set a ridiculous width to kill the side bar
+  CALL wNode.setAttribute("width","1000")
+  CALL fNode.setAttribute("width","1000")
+  CALL fNode.setAttribute("minWidth","1000")
+  FOR i=1 TO 2
+  
+  LET nl=fNode.selectByTagName(IIF(i==1,"Grid","TextEdit"))
+  IF nl.getLength()<1 THEN 
+    CALL myerror("No textedit found")
+  END IF
+  LET te=nl.item(1)
+  CALL te.setAttribute("width","1000")
+  CALL te.setAttribute("gridWidth","1000")
+  END FOR
+END FUNCTION
+
+FUNCTION firstLetterToUpper(s)
+  DEFINE s,s1,s2 STRING
+  LET s1=s.subString(1,1)
+  LET s1=s1.toUpperCase()
+  LET s2=s.subString(2,s.getLength())
+  LET s2=s2.toLowerCase()
+  RETURN sfmt("%1%2",s1,s2)
+END FUNCTION
+
+FUNCTION handleAccel(s)
+  DEFINE s,first,second STRING
+  DEFINE minus INT
+  LET minus=s.getIndexOf("-",1)
+  IF minus<>0 THEN
+    LET first=s.subString(1,minus-1)
+    LET first=firstLetterToUpper(first)
+    LET second=s.subString(minus+1,s.getLength())
+    LET second=firstLetterToUpper(second)
+    RETURN sfmt("%1-%2",first,second)
+  END IF
+  RETURN firstLetterToUpper(s)
+END FUNCTION
+
+--we make the accelereators visible in the TopMenu if running under GBC
+--this should be build in into GBC...
+FUNCTION addAcceleratorsToTopMenu()
+  DEFINE w ui.Window
+  DEFINE root,wNode,tc,ad,p,next om.DomNode
+  DEFINE nl1,nl2 om.NodeList
+  DEFINE f,txt,acc,name STRING
+  DEFINE doc om.DomDocument
+  DEFINE i,j INT
+  LET f=os.Path.join(os.Path.dirName(arg_val(0)),"fglped.42f")
+  LET doc=om.DomDocument.createFromXmlFile(f)
+  IF doc IS NULL THEN
+    CALL myErr(sfmt("can't read :%1",f))
+  END IF
+  LET w=ui.Window.getCurrent()
+  LET wNode=w.getNode()
+  LET nl1=wNode.selectByTagName("TopMenuCommand")
+  LET root=doc.getDocumentElement()
+  LET nl2=root.selectByTagName("ActionDefault")
+  FOR i=1 TO nl1.getLength()
+    LET tc=nl1.item(i)
+    LET name=tc.getAttribute("name")
+    --remove the actions which are not (yet) usable
+    --some can be re added if some GBC bugs are fixed
+    IF name="findword" 
+       OR name="jump_to_def" 
+       OR name="toggle_text"
+       OR name="replace"
+       OR name="replaceagain"
+       OR name="undolastreplace"
+       OR name="viewerr"
+       OR name="editcopy"
+       OR name="editpaste"
+       OR name="editcut"
+       THEN
+       LET p=tc.getParent()
+       LET next=tc.getNext()
+       IF next IS NOT NULL AND next.getTagName()=="TopMenuSeparator" THEN
+         CALL p.removeChild(next)
+       END IF
+       CALL p.removeChild(tc)
+       CONTINUE FOR
+    END IF
+    FOR j=1 TO nl2.getLength()
+      LET ad=nl2.item(j)
+      IF ad.getAttribute("name")==name THEN
+        LET acc=ad.getAttribute("acceleratorName")
+        LET txt=ad.getAttribute("text")
+        IF acc IS NOT NULL AND txt IS NOT NULL THEN
+          CALL tc.setAttribute("text",SFMT("%1 (%2)",txt,handleAccel(acc)))
+        END IF
+      END IF
+    END FOR
+  END FOR
+END FUNCTION
+
+FUNCTION myErr(errstr)
+  DEFINE errstr STRING
+  DISPLAY "ERROR:",errstr
+  EXIT PROGRAM 1
 END FUNCTION
