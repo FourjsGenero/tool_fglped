@@ -438,6 +438,7 @@ FUNCTION displayError(s)
   EXIT PROGRAM 1
 END FUNCTION
 
+{
 FUNCTION getColType(col_type, col_length) 
   DEFINE col_type, col_length SMALLINT
   DEFINE field_type STRING
@@ -452,6 +453,7 @@ FUNCTION getColLength(col_type, col_length)
 
   RETURN field_length
 END FUNCTION
+}
 
 FUNCTION createLayout()
   DEFINE i  SMALLINT

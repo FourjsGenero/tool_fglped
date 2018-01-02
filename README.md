@@ -12,10 +12,11 @@ Email comments/suggestions/wishes to : l s a t 4 j s d o t c o m
 
 ## Prerequisites
 
-* Genero BDL 3.10+
-* Genero Desktop Client 3.10+
-* Genero Studio 3.10+
+* Genero BDL 2.40+
+* Genero Desktop Client 2.40+
+* GBC 1.41+
 * GNU Make
+* optional : Genero Studio 3.10+
 
 ## Compilation from command line
 
@@ -59,15 +60,10 @@ fglped is located in.
 fglped has 2 windows, the active window is always the window containing the .per
 source code, the other one is always inactive and shows the rendered form.
 
+GDC:
 The form display refreshes each second after the last key was pressed.
+(In an ON IDLE 1 action).
 
-(In an ON IDLE 1 action) but the window containing the form is kept open.
-
-However pressing F5 refreshes the form immediately but also recreates the
-window (to recreate everything from scratch).
-
-You should have stored settings switched on in the GDC, otherwise pressing F5
-very likely opens the displayed form at another place.
 
 If the current form is not compilable, an error line containing the first form
 compiler error is displayed in the statusbar. Pressing F5 results then in showing
@@ -79,8 +75,12 @@ To jump just to the position of the first error without showing a box, press F6.
 If no error message is shown in the statusbar, the form was compiled and should
 show up in the 2nd window. 
 
+GBC:
+It's not possible to have the editor and preview visible at the same time:
+Pressing F5 previews the form if it is possible to compile.
 
-### Synchronizing the location in the source code with the actual widget position
+
+### GDC: Synchronizing the location in the source code with the actual widget position
 
 This only works if the form is compilable, that means pressing F5 must not
 produce errors.
@@ -97,8 +97,6 @@ clicked widget and jumps immediately with the cursor to the source code location
 of the symbol referring to the widget in the LAYOUT section of the .per . 
 
 Press Ctrl-w to jump to the next occurence of the symbol in the source code.
-(Another hotkey to jump to the definition of the symbol in the ATTRIBUTES section
-is in preparation).
 
 
 ### Using source code autocompletion
