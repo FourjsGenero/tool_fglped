@@ -43,8 +43,9 @@ Email comments/suggestions/wishes to : l s a t 4 j s d o t c o m
 
 ### Installation
 
-Make sure that the FGLPEDPATH environment variable defines the actual directory
-fglped is located in.
+You don't need to install fglped.
+Just make sure that an fgl installation and this fglped directory is in the PATH.
+You can call the fglped(.bat) script which compiles and runs the editor in one go.
 
 ### Usage hints
 

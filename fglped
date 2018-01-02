@@ -1,0 +1,22 @@
+#!/bin/bash
+realpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+fullname () {
+  local myDIR=`dirname "$1"`
+  pushd "$myDIR" >/dev/null
+  realDIR=`pwd`
+  popd > /dev/null
+  local basefile=`basename "$1"`
+  echo "$realDIR/$basefile"
+}
+
+SCRIPT_NAME=`fullname $0`
+FGLPEDPATH=`dirname $SCRIPT_NAME` 
+#we recompile everything always: hence avoid version clashes
+make -C $FGLPEDPATH clean all > /dev/null
+export FGLPEDPATH
+export FGLRESOUREPATH=$FGLPEDPATH:$FGLRESOURPATH
+export DBPATH=$FGLPEDPATH:$DBPATH
+exec fglrun $FGLPEDPATH/fglped.42m "$@" 
