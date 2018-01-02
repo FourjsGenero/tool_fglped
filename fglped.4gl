@@ -2825,7 +2825,7 @@ FUNCTION handleAccel(s)
     LET first=firstLetterToUpper(first)
     LET second=s.subString(minus+1,s.getLength())
     LET second=firstLetterToUpper(second)
-    RETURN sfmt("%1-%2",first,second)
+    RETURN sfmt("%1+%2",first,second)
   END IF
   RETURN firstLetterToUpper(s)
 END FUNCTION
