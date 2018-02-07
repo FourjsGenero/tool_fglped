@@ -37,6 +37,15 @@ DEFINE m_browseidx INT
 DEFINE m_toggle_text INT
 DEFINE m_raiseId INT
 DEFINE m_clientOnMac INT
+DEFINE m_showWeb INT
+
+DEFINE m_gasdir STRING
+DEFINE m_port INT
+DEFINE m_isMac BOOLEAN
+DEFINE m_gbcdir,m_gbcname STRING
+DEFINE m_appname STRING
+DEFINE m_tmpWebForm STRING
+
 
 --- searchdialog
 DEFINE srch_search STRING
@@ -67,6 +76,12 @@ MAIN
   DEFINE code INT
   DEFINE first_window INT
   OPTIONS FIELD ORDER FORM
+  LET m_port=6395 --default GAS port is 6394
+  LET m_gasdir=fgl_getenv("FGLASDIR")
+  IF os.Path.exists(m_gasdir) THEN
+    LET m_showWeb=TRUE
+  END IF
+    
   IF (pedpath:=fgl_getenv("FGLPEDPATH")) IS NOT NULL THEN
     LET m_user_styles=file_join(pedpath,"user.4st")
   ELSE
@@ -296,10 +311,10 @@ LABEL doOpen:
         LET copy2 = NULL
       END IF
     ON ACTION save
+      LET src=fetchSrc(get_fldbuf(src))
       IF isNewFile() THEN
         GOTO dosaveas
       END IF
-      LET src=fetchSrc(get_fldbuf(src))
       IF NOT file_write(m_srcfile,src) THEN
         CALL fgl_winmessage(S_ERROR,sfmt("Can't write:%1",m_srcfile),IMG_ERROR)
       ELSE
@@ -307,6 +322,7 @@ LABEL doOpen:
         LET src_copy=src
       END IF
     ON ACTION saveas
+      LET src=fetchSrc(get_fldbuf(src)) 
 LABEL dosaveas:
       IF (saveasfile:=fglped_saveasdlg(m_srcfile)) IS NOT NULL THEN
         IF NOT file_write(saveasfile,src) THEN
@@ -371,7 +387,7 @@ LABEL completion:
       IF NOT isGBC() THEN
         GOTO idleCheck
       END IF
-    ON IDLE 1
+    ON TIMER 1
       LET src=fetchSrc(get_fldbuf(src))
       IF checkChanged(src,copy2) THEN
          LET changed=1
@@ -1210,7 +1226,7 @@ END FUNCTION
 --loaded via XML into the existing window
 FUNCTION showform(opt,otherform,refresh,previewaction)
   DEFINE opt INT
-  DEFINE otherform STRING
+  DEFINE otherform,tmpDir STRING
   DEFINE refresh INT
   DEFINE previewaction INT
   DEFINE pstyle,ff STRING
@@ -1238,7 +1254,11 @@ FUNCTION showform(opt,otherform,refresh,previewaction)
     END IF
     --OPEN WINDOW sc WITH FORM ff ATTRIBUTES(style=S_PREVIEW)
     OPEN WINDOW sc AT 0,0 WITH 25 ROWS, 60 COLUMNS ATTRIBUTES(style=pstyle)
-    OPEN FORM theform FROM ff
+    IF m_showWeb THEN
+      OPEN FORM theform FROM "fglped_webpreview"
+    ELSE
+      OPEN FORM theform FROM ff
+    END IF
     DISPLAY FORM theform
     LET m_sc_open=1
     LET winNode=getWindowNode("sc")
@@ -1253,14 +1273,30 @@ FUNCTION showform(opt,otherform,refresh,previewaction)
     --just load the form into the existing window
     CURRENT WINDOW IS sc
     CLOSE FORM theform
-    LET fNode=loadForm(ff,"sc",pstyle)
-    IF fNode IS NULL THEN
-      LET m_showform_failed=1
-      LET m_error_line="Can't load :",ff
-      LET fNode=m_formNode
+    IF m_showWeb THEN
+      OPEN FORM theform FROM "fglped_webpreview"
+    ELSE
+      LET fNode=loadForm(ff,"sc",pstyle)
+      IF fNode IS NULL THEN
+        LET m_showform_failed=1
+        LET m_error_line="Can't load :",ff
+        LET fNode=m_formNode
+      END IF
+      CALL fNode.setAttribute(A_VERSION,m_formVersion)
+      LET winNode = fNode.getParent()
     END IF
-    CALL fNode.setAttribute(A_VERSION,m_formVersion)
-    LET winNode = fNode.getParent()
+  END IF
+  IF m_showWeb THEN
+    LET tmpDir=fgl_getenv("TMPDIR")
+    LET m_tmpWebForm=os.Path.join(tmpDir,sfmt("fglpedtmp%1.42f",fgl_getpid()))
+    IF NOT os.Path.copy(ff,m_tmpWebForm) THEN
+      DISPLAY "Can't copy:",ff
+    ELSE
+      IF NOT checkGASInt() THEN
+        DISPLAY "Can't start GAS or create GAS entry"
+        LET m_showWeb=FALSE
+      END IF
+    END IF
   END IF
   IF NOT m_formedit AND NOT isGBC() THEN
     --activate the formedit click extension if available
@@ -1283,6 +1319,9 @@ FUNCTION showform(opt,otherform,refresh,previewaction)
     CURRENT WINDOW IS __filedialog
   ELSE
     CURRENT WINDOW IS screen
+  END IF
+  IF m_showWeb THEN --leave out some mark up
+    RETURN
   END IF
   LET m_formNode=fNode
   --uncomment the following line to see some data inside the form
@@ -1316,6 +1355,11 @@ FUNCTION close_sc_window()
       --LET m_init=1
     --END IF
     IF isGBC() THEN
+      CLOSE WINDOW sc
+      LET m_sc_open=0
+    END IF
+    IF isGBC() THEN
+      DISPLAY "CLOSE WINDOW sc"
       CLOSE WINDOW sc
       LET m_sc_open=0
     END IF
@@ -1760,6 +1804,9 @@ FUNCTION findCursorEl()
   DEFINE matchNode om.DomNode
   --call recursively the internal function until the closest
   --cursor match
+  IF m_formNode IS NULL THEN
+    RETURN NULL
+  END IF
   LET matchNode=findCursorElInt(m_formNode,m_formNode)
   RETURN matchNode 
 END FUNCTION
@@ -2799,7 +2846,7 @@ FUNCTION hideSideBar()
   
   LET nl=fNode.selectByTagName(IIF(i==1,"Grid","TextEdit"))
   IF nl.getLength()<1 THEN 
-    CALL myerror("No textedit found")
+    CALL myErr("No textedit found")
   END IF
   LET te=nl.item(1)
   CALL te.setAttribute("width","1000")
@@ -2890,4 +2937,293 @@ FUNCTION myErr(errstr)
   DEFINE errstr STRING
   DISPLAY "ERROR:",errstr
   EXIT PROGRAM 1
+END FUNCTION
+
+FUNCTION myErrReturn(s)
+  DEFINE s STRING
+  DISPLAY "ERROR:",s
+  RETURN FALSE
+END FUNCTION
+
+FUNCTION isWin()
+  RETURN fgl_getenv("WINDIR") IS NOT NULL
+END FUNCTION
+
+FUNCTION checkGAS()
+END FUNCTION
+
+FUNCTION checkGASInt()
+  DEFINE defdir STRING
+  IF m_gasdir IS NULL THEN
+    RETURN FALSE
+  END IF
+  IF NOT checkGBCDir() THEN
+    LET defdir=os.Path.join(m_gasdir,"web/gwc-js")
+    IF NOT os.Path.exists(defdir) AND NOT os.Path.isDirectory(defdir) THEN
+      RETURN FALSE
+    END IF
+  END IF
+  IF NOT try_GASalive() THEN
+    IF NOT runGAS() THEN
+      RETURN FALSE
+    END IF
+  END IF
+  IF NOT createGASApp() THEN
+    RETURN FALSE
+  END IF
+  CALL displayURL()
+  RETURN TRUE
+END FUNCTION
+
+FUNCTION displayURL()
+  DEFINE url STRING
+  IF m_gbcdir IS NOT NULL THEN
+    LET url=sfmt("http://localhost:%1/%2/index.html?app=%3",m_port,m_gbcname,m_appname)
+  ELSE
+    LET url=sfmt("http://localhost:%1/gwc-js/index.html?app=%2",m_port,m_appname)
+  END IF
+  DISPLAY url TO webpreview
+END FUNCTION
+
+--write a GAS app entry 
+FUNCTION createGASApp()
+  DEFINE ch base.Channel
+  DEFINE appdir,appfile,ext,cmd,line,name STRING
+  DEFINE copyenv DYNAMIC ARRAY OF STRING
+  DEFINE code,i,eqIdx INT
+  DEFINE invokeShell BOOLEAN
+  DEFINE dollar STRING
+  LET dollar='$'
+  LET ch=base.Channel.create()
+  LET appdir=os.Path.join(os.Path.join(m_gasdir,"appdata"),"app")
+  IF NOT os.Path.exists(appdir) THEN
+    IF NOT os.Path.mkdir(appdir) THEN
+      RETURN myErrReturn(sfmt("GAS app dir:%1 doesn't exist and cannot be created",appdir))
+    END IF 
+  END IF
+  LET m_appname=sfmt("fglped_web%1",fgl_getpid())
+  LET appfile=os.Path.join(appdir,sfmt("%1.xcf",m_appname))
+  TRY
+    CALL ch.openFile(appfile,"w")
+  CATCH
+    RETURN myErrReturn(sfmt("Can't open %1:%2",appfile,err_get(status)))
+  END TRY
+  CALL ch.writeLine(       "<?xml version=\"1.0\"?>")
+  CALL ch.writeLine(       "<APPLICATION Parent=\"defaultgwc\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.4js.com/ns/gas/2.30/cfextwa.xsd\">" )
+  IF fgl_getenv("FGLRUN") IS NOT NULL THEN
+    CALL ch.writeLine(sfmt("<RESOURCE Id=\"res.dvm.wa\" Source=\"INTERNAL\">%1</RESOURCE>",fgl_getenv("FGLRUN")))
+  END IF
+  IF fgl_getenv("FGLDIR") IS NOT NULL THEN
+    CALL ch.writeLine(sfmt(  "  <RESOURCE Id=\"res.fgldir\" Source=\"INTERNAL\">%1</RESOURCE>",fgl_getenv("FGLDIR")))
+  END IF
+  CALL ch.writeLine(sfmt(  "  <RESOURCE Id=\"res.path\" Source=\"INTERNAL\">%1</RESOURCE>",fgl_getenv("PATH")))
+  CALL ch.writeLine(       "  <EXECUTION>")
+  {
+  CALL file_get_output(IIF(isWin(),"set","env"),copyenv) 
+  --we simply add every environment var in the .xcf file
+  FOR i=1 TO copyenv.getLength() 
+    LET line=copyenv[i]
+    IF (eqIdx:=line.getIndexOf("=",1))>0 THEN
+      LET name=line.subString(1,eqIdx-1) --may be we need to leave out some vars...candidate is _FGL_PPID
+      IF name.getIndexOf("_FGL_",1)==1 or name.getIndexOf("FGLGUI",1)==1 THEN
+        CONTINUE FOR
+      END IF
+      IF fgl_getenv(name) IS NOT NULL THEN --check if we actually have this env
+        CALL ch.writeLine(sfmt(  "    <ENVIRONMENT_VARIABLE Id=\"%1\">%2</ENVIRONMENT_VARIABLE>",name,fgl_getenv(name)))
+      END IF
+    END IF
+  END FOR
+  IF m_gbcdir IS NOT NULL AND 
+     os.Path.exists(os.Path.join(m_gbcdir,"gbc2.css")) THEN
+     --GBC2 needs JSON with FGLGUI set to 2
+      CALL ch.writeLine( "    <ENVIRONMENT_VARIABLE Id=\"FGLGUI\">2</ENVIRONMENT_VARIABLE>")
+  END IF
+  }
+  CALL ch.writeLine("    <ENVIRONMENT_VARIABLE Id=\"FGLGUIDEBUG\">1</ENVIRONMENT_VARIABLE>")
+  CALL ch.writeLine(sfmt(  "    <PATH>%1</PATH>",os.Path.dirname(arg_val(0))))
+  CALL ch.writeLine(sfmt(  "    <MODULE>%1</MODULE>","fglped_webpreview"))
+  CALL ch.writeLine(       "    <PARAMETERS>")
+  --FOR i=2 TO num_args()
+    CALL ch.writeLine(sfmt(  "      <PARAMETER>%1</PARAMETER>",m_tmpWebForm))
+  --END FOR
+  CALL ch.writeLine(       "    </PARAMETERS>")
+  CALL ch.writeLine(       "  </EXECUTION>")
+  IF m_gbcdir IS NOT NULL THEN
+    CALL ch.writeLine(       "  <UA_OUTPUT>")
+    CALL ch.writeLine(  sfmt("     <PROXY>%1(res.uaproxy.cmd)</PROXY>",dollar))
+    CALL ch.writeLine(  sfmt("     <PUBLIC_IMAGEPATH>%1(res.public.resources)</PUBLIC_IMAGEPATH>",dollar))
+    CALL ch.writeLine(  sfmt("     <GWC-JS>%1</GWC-JS>",m_gbcname))
+    CALL ch.writeLine(       "   </UA_OUTPUT>")
+  END IF
+
+  CALL ch.writeLine(       "</APPLICATION>")
+  CALL ch.close()
+  CALL log(sfmt("wrote gas app file:%1",appfile))
+  RETURN TRUE
+END FUNCTION
+
+FUNCTION runGAS()
+  DEFINE cmd,gasbindir,httpdispatch,filter STRING
+  DEFINE trial,i INT
+  IF NOT bindport() THEN
+    RETURN FALSE
+  END IF
+  LET gasbindir=os.Path.join(m_gasdir,"bin")
+  LET httpdispatch=IIF(isWin(),"httpdispatch.exe","httpdispatch")
+  LET httpdispatch=os.Path.join(gasbindir,httpdispatch)
+  IF NOT os.Path.exists(httpdispatch) THEN
+    RETURN myErrReturn(sfmt("Can't find %1",httpdispatch))
+  END IF
+  IF isWin() THEN
+    LET cmd='cd ',m_gasdir,'&&start ',httpdispatch
+  ELSE
+    LET cmd=httpdispatch
+  END IF
+  --LET filter="ERROR"
+  --LET filter="ERROR PROCESS"
+  IF (filter:=fgl_getenv("CATEGORIES_FILTER")) IS NULL THEN
+    --default filter value
+    --other possible values "ERROR" "ALL"
+    LET filter="PROCESS"
+  END IF
+  LET cmd=cmd,' -p ', m_gasdir,sfmt(' -E "res.ic.port.offset=%1"',m_port-6300),' -E "res.log.output.type=CONSOLE" -E ',sfmt('"res.log.categories_filter=%1"',filter)
+  --comment the following line if you want  to disable AUI tree watching
+  --LET cmd=cmd,'  -E res.uaproxy.param=--development '
+  IF NOT isWin() THEN
+    LET cmd=cmd,' -E "res.log.output.path=/tmp"'
+  END IF
+  LET cmd=cmd,' -E "res.appdata.path=',os.Path.join(m_gasdir,"appdata") ,'" >/dev/null 2>&1'
+    
+  CALL log(sfmt("RUN %1 ...",cmd))
+  RUN cmd WITHOUT WAITING
+  FOR i=1 TO 4 
+    IF try_GASalive() THEN
+      RETURN TRUE
+    END IF
+    SLEEP 1
+  END FOR
+  RETURN myErrReturn("Can't startup GAS, check your configuration, FGLASDIR")
+END FUNCTION
+
+--if GBCDIR is set a custom GBC installation is linked into the GAS
+--web dir
+FUNCTION checkGBCDir()
+  DEFINE dummy,code INT
+  DEFINE custom_gbc STRING
+  LET m_gbcdir=fgl_getenv("GBCDIR")
+  IF m_gbcdir IS NULL THEN
+    RETURN FALSE
+  END IF
+  IF (NOT os.Path.exists(m_gbcdir)) OR 
+     (NOT os.Path.isDirectory(m_gbcdir)) THEN
+    RETURN myErrReturn(sfmt("GBCDIR %1 is not a directory",m_gbcdir))
+  END IF
+  LET m_gbcdir=os.Path.fullPath(m_gbcdir);
+  LET m_gbcname=os.Path.baseName(m_gbcdir);
+  IF m_gbcname IS NULL THEN
+    RETURN myErrReturn("GBC dirname must not be NULL")
+  END IF
+  IF m_gbcname=="gwc-js" THEN
+    RETURN myErrReturn("GBC dirname must not be 'gwc-js'")
+  END IF
+  --remove the old symbolic link
+  LET custom_gbc=os.Path.join(os.Path.join(m_gasdir,"web"),m_gbcname)
+  CALL os.Path.delete(custom_gbc) RETURNING dummy
+  CALL log(sfmt("custom_gbc:%1",custom_gbc))
+  IF NOT isWin() THEN
+    RUN sfmt("ln -s %1 %2",m_gbcdir,custom_gbc) RETURNING code
+  ELSE
+    RUN sfmt("mklink %1 %2",m_gbcdir,custom_gbc) RETURNING code
+  END IF
+  IF code THEN
+    RETURN myErrReturn("could not link GBC into GAS web dir");
+  END IF
+  RETURN TRUE
+END FUNCTION
+
+FUNCTION try_GASalive()
+    DEFINE c base.Channel
+    DEFINE s STRING
+    DEFINE found BOOLEAN
+    LET c = base.Channel.create()
+    CALL log(sfmt("probe GAS on port:%1",m_port))
+    TRY 
+        CALL c.openClientSocket("localhost", m_port, "u", 2)
+    CATCH
+        RETURN FALSE
+    END TRY
+    -- write header
+    LET s = "GET /index.html HTTP/1.1"
+    CALL writeLine(c, s)
+    CALL writeLine(c, "Host: localhost")
+    CALL writeLine(c, "User-Agent: fglrun")
+    CALL writeLine(c, "Accept: */*")
+    CALL writeLine(c, "")
+
+    LET found = read_response(c)
+    CALL c.close()
+    RETURN found
+END FUNCTION
+
+FUNCTION read_response(c)
+    DEFINE c base.Channel
+    DEFINE s STRING
+    WHILE NOT c.isEof()
+      LET s = c.readLine()
+      LET s = s.toLowerCase()
+
+      IF s MATCHES "x-fourjs-server: gas/3*" THEN
+        RETURN TRUE
+      END IF
+      IF s.getLength() == 0 THEN
+        EXIT WHILE
+      END IF
+    END WHILE
+    RETURN FALSE
+END FUNCTION
+
+FUNCTION writeLine(c, s)
+    DEFINE c base.Channel
+    DEFINE s STRING
+    LET s = s, '\r'
+    CALL c.writeLine(s)
+END FUNCTION
+
+FUNCTION log(s)
+  DEFINE s STRING
+  IF fgl_getenv("VERBOSE") IS NOT NULL THEN
+    DISPLAY "LOG:",s
+  END IF
+END FUNCTION
+
+FUNCTION bindport()
+  DEFINE newport INT
+  DEFINE cmd,prog STRING
+  --IF m_fglmajor<2525 THEN -- < 2.51
+  --  RETURN FALSE
+  --END IF
+  LET prog=os.Path.join(os.Path.dirname(arg_val(0)),"bindport.42m")
+  LET cmd=sfmt("fglrun %1 %2",prog,m_port)
+  LET newport=readOutput(cmd)
+  IF newport IS NULL OR newport==0 THEN
+    RETURN myErrReturn(sfmt("Can't get port number from '%1'",cmd))
+  END IF
+  IF newport<>m_port THEN
+    LET m_port=newport
+  END IF
+  RETURN TRUE
+END FUNCTION
+
+FUNCTION readOutput(program)
+  DEFINE program STRING
+  DEFINE linestr STRING
+  DEFINE c base.Channel
+  LET c = base.channel.create()
+  WHENEVER ERROR CONTINUE
+  CALL c.openpipe(program,"r")
+  WHENEVER ERROR STOP
+  --DISPLAY "file_get_output:",program
+  LET linestr=c.readline()
+  CALL c.close()
+  RETURN linestr
 END FUNCTION
