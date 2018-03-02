@@ -78,9 +78,9 @@ MAIN
   OPTIONS FIELD ORDER FORM
   LET m_port=6395 --default GAS port is 6394
   LET m_gasdir=fgl_getenv("FGLASDIR")
-  IF os.Path.exists(m_gasdir) THEN
-    LET m_showWeb=TRUE
-  END IF
+  --IF os.Path.exists(m_gasdir) THEN
+  --  LET m_showWeb=TRUE
+  --END IF
     
   IF (pedpath:=fgl_getenv("FGLPEDPATH")) IS NOT NULL THEN
     LET m_user_styles=file_join(pedpath,"user.4st")
@@ -387,7 +387,7 @@ LABEL completion:
       IF NOT isGBC() THEN
         GOTO idleCheck
       END IF
-    ON TIMER 1
+    ON IDLE 1
       LET src=fetchSrc(get_fldbuf(src))
       IF checkChanged(src,copy2) THEN
          LET changed=1
@@ -1355,11 +1355,6 @@ FUNCTION close_sc_window()
       --LET m_init=1
     --END IF
     IF isGBC() THEN
-      CLOSE WINDOW sc
-      LET m_sc_open=0
-    END IF
-    IF isGBC() THEN
-      DISPLAY "CLOSE WINDOW sc"
       CLOSE WINDOW sc
       LET m_sc_open=0
     END IF
