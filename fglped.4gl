@@ -81,7 +81,7 @@ MAIN
   --IF os.Path.exists(m_gasdir) THEN
   --  LET m_showWeb=TRUE
   --END IF
-    
+
   IF (pedpath:=fgl_getenv("FGLPEDPATH")) IS NOT NULL THEN
     LET m_user_styles=file_join(pedpath,"user.4st")
   ELSE
@@ -1309,7 +1309,8 @@ FUNCTION showform(opt,otherform,refresh,previewaction)
   IF previewaction AND (NOT isGDC()) THEN
     DISPLAY "createPreview"
     MENU "Preview"
-      ON ACTION myclose ATTRIBUTE(TEXT="Close (Escape)",ACCELERATOR="Escape")
+      COMMAND KEY(escape)
+      ON ACTION myclose --ATTRIBUTE(TEXT="Close (Escape)",ACCELERATOR="Escape")
         EXIT MENU
     END MENU
     RETURN
@@ -3100,6 +3101,31 @@ FUNCTION runGAS()
   RETURN myErrReturn("Can't startup GAS, check your configuration, FGLASDIR")
 END FUNCTION
 
+--2.41 has no os.Path.fullPath
+FUNCTION fullPath(dir_or_file)
+  DEFINE oldpath,dir_or_file,full,baseName STRING
+  DEFINE dummy INT
+  LET full=dir_or_file
+  LET oldpath=os.Path.pwd()
+  IF NOT os.Path.exists(dir_or_file) THEN
+    CALL myerr(sfmt("fullPath:'%1' does not exist",dir_or_file))
+  END IF
+  IF NOT os.Path.isDirectory(dir_or_file) THEN
+    --file case
+    LET baseName=os.Path.basename(dir_or_file)
+    LET dir_or_file=os.Path.dirName(dir_or_file)
+  END IF
+  IF os.Path.chdir(dir_or_file) THEN
+    LET full=os.Path.pwd()
+    IF baseName IS NOT NULL THEN 
+      --file case
+      LET full=os.Path.join(full,baseName)
+    END IF
+  END IF
+  CALL os.Path.chdir(oldpath) RETURNING dummy
+  RETURN full
+END FUNCTION
+
 --if GBCDIR is set a custom GBC installation is linked into the GAS
 --web dir
 FUNCTION checkGBCDir()
@@ -3113,7 +3139,7 @@ FUNCTION checkGBCDir()
      (NOT os.Path.isDirectory(m_gbcdir)) THEN
     RETURN myErrReturn(sfmt("GBCDIR %1 is not a directory",m_gbcdir))
   END IF
-  LET m_gbcdir=os.Path.fullPath(m_gbcdir);
+  LET m_gbcdir=fullPath(m_gbcdir);
   LET m_gbcname=os.Path.baseName(m_gbcdir);
   IF m_gbcname IS NULL THEN
     RETURN myErrReturn("GBC dirname must not be NULL")
