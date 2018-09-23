@@ -482,6 +482,9 @@ FUNCTION _isLocal()
   DEFINE ip,fename STRING
   CALL ui.Interface.frontcall("standard","feinfo", ["fename"],[fename])
   IF (fename = "GDC" OR fename="Genero Desktop Client") THEN
+    IF fgl_getenv("SSH_CLIENT") IS NOT NULL THEN
+      RETURN FALSE
+    END IF
     LET ip=_getClientIP()
     IF ip IS NULL OR ip=="localhost" OR ip="127.0.0.1" THEN
       RETURN TRUE
