@@ -88,6 +88,7 @@ MAIN
     LET m_user_styles="user.4st"
   END IF
   CALL ui.Interface.loadStyles("fglped")
+  CALL ui.Interface.loadActionDefaults("fglped")
   LET m_opt_cursor=1
   LET first_window=TRUE
   IF num_args()>0 THEN
@@ -1309,8 +1310,7 @@ FUNCTION showform(opt,otherform,refresh,previewaction)
   IF previewaction AND (NOT isGDC()) THEN
     DISPLAY "createPreview"
     MENU "Preview"
-      COMMAND KEY(escape)
-      ON ACTION myclose --ATTRIBUTE(TEXT="Close (Escape)",ACCELERATOR="Escape")
+      ON ACTION myclose
         EXIT MENU
     END MENU
     RETURN
