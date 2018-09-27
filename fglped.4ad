@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ANSI_X3.4-1968"?>
+<!--
+Property of Four Js*
+(c) Copyright Four Js 1995, 2018. All Rights Reserved.
+* Trademark of Four Js Development Tools Europe Ltd
+  in the United States and elsewhere
+
+  This file can be modified by licensees according to the
+  product manual.
+-->
+
+<ActionDefaultList>
+  <ActionDefault name="accept" text="OK" acceleratorName="Return" acceleratorName2="Enter" contextMenu="no"/>
+  <ActionDefault name="cancel" validate="no" text="Cancel" contextMenu="no"/>
+  <ActionDefault name="help" validate="no" text="Help" acceleratorName="F1" contextMenu="no"/>
+  <ActionDefault name="close" validate="no" text="Close" acceleratorName="Alt-F4" defaultView="no" contextMenu="no"/>
+  <ActionDefault name="myclose" validate="no" text="Close" acceleratorName="Escape" contextMenu="no"/>
+  <ActionDefault name="interrupt" text="Interrupt" contextMenu="no"/>
+  <ActionDefault name="next" text="Next" image="goforw" comment="Next record" contextMenu="no"/>
+  <ActionDefault name="previous" text="Previous" image="gorev" comment="Previous record" contextMenu="no"/>
+  <ActionDefault name="first" text="First" image="gobegin" comment="First record" contextMenu="no"/>
+  <ActionDefault name="last" text="Last" image="goend" comment="Last record" contextMenu="no"/>
+  <ActionDefault name="print" text="Print" image="printer" comment="Print" contextMenu="no"/>
+  <ActionDefault name="editcopy" text="Copy" image="copy" comment="Copy" acceleratorName="Control-C" contextMenu="no"/>
+  <ActionDefault name="editcut" text="Cut" image="cut" comment="Cut" acceleratorName="Control-X" contextMenu="no"/>
+  <ActionDefault name="editpaste" text="Paste" image="paste" comment="Paste" acceleratorName="Control-V" contextMenu="no"/>
+</ActionDefaultList>
